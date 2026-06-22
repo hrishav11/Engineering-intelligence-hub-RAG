@@ -49,7 +49,7 @@ with st.sidebar:
     st.caption("**About**")
     st.markdown(
         "Code-RAG over [Apache Airflow](https://github.com/apache/airflow). "
-        "Honest portfolio project — see [README](https://github.com/yourname/your-repo) for measured numbers."
+        "Honest portfolio project — see [README](https://github.com/hrishav11/Engineering-intelligence-hub-RAG) for measured numbers."
     )
 
 
