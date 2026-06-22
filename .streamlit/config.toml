@@ -1,0 +1,15 @@
+[theme]
+# Light theme with orange accents — industry-grade clean look
+base = "light"
+primaryColor = "#EA580C"               # orange-600 — accent, buttons, links
+backgroundColor = "#FFFFFF"            # main canvas
+secondaryBackgroundColor = "#FFF7ED"   # orange-50 — sidebar, expanders, cards
+textColor = "#0F172A"                  # slate-900 — high contrast
+font = "sans serif"
+
+[server]
+headless = true
+runOnSave = true
+
+[browser]
+gatherUsageStats = false
