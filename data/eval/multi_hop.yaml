@@ -1,0 +1,234 @@
+# Multi-hop eval questions — answers genuinely span multiple files.
+# Auto-generation can't produce these (one chunk = one expected source), so
+# they're hand-written. Each question's `expected_paths` lists 2+ distinct
+# files that ALL need to be reachable; `path_coverage` is the meaningful metric.
+
+- id: mh_callback_order
+  question: "When a task fails in Airflow, which callbacks fire and in what order? Walk through the code path from the failure to the callback execution."
+  category: multi_hop
+  expected_paths:
+    - task-sdk/src/airflow/sdk
+    - airflow-core/src/airflow/models/taskinstance.py
+  expected_symbols:
+    - on_failure_callback
+    - handle_failure
+  notes: "TaskInstance failure path + callback dispatch in task-sdk. Both files needed."
+
+- id: mh_dag_file_to_scheduler
+  question: "When a DAG file changes on disk, what is the full path from detection to the scheduler picking up the new version?"
+  category: multi_hop
+  expected_paths:
+    - airflow-core/src/airflow/dag_processing
+    - airflow-core/src/airflow/jobs
+    - airflow-core/src/airflow/models/dag.py
+  expected_symbols:
+    - DagFileProcessorManager
+    - DagBag
+  notes: "Spans dag_processing module, scheduler job, and DAG model."
+
+- id: mh_pool_and_max_active
+  question: "How does parallel task scheduling respect both pool slots and max_active_tis_per_dag at the same time?"
+  category: multi_hop
+  expected_paths:
+    - airflow-core/src/airflow/jobs/scheduler_job_runner.py
+    - airflow-core/src/airflow/ti_deps
+    - airflow-core/src/airflow/models/pool.py
+  expected_symbols:
+    - find_executable_task_instances
+    - PoolSlotsAvailable
+    - MaxActiveTisPerDag
+  notes: "Scheduler + dep classes + Pool model — three-way coordination."
+
+- id: mh_xcom_push_pull
+  question: "Trace the full lifecycle of an XCom: from when a task pushes a value to when a downstream task pulls it. What classes and methods are involved at each step?"
+  category: multi_hop
+  expected_paths:
+    - task-sdk/src/airflow/sdk/bases/xcom.py
+    - airflow-core/src/airflow/models/xcom.py
+    - task-sdk/src/airflow/sdk/execution_time
+  expected_symbols:
+    - BaseXCom
+    - serialize_value
+    - xcom_push
+  notes: "Push path + storage + pull path = 3 distinct subsystems."
+
+- id: mh_retry_to_running
+  question: "When a task fails and is configured for retries, what code path takes it from FAILED back to RUNNING for the next attempt?"
+  category: multi_hop
+  expected_paths:
+    - task-sdk/src/airflow/sdk
+    - airflow-core/src/airflow/models/taskinstance.py
+    - airflow-core/src/airflow/jobs/scheduler_job_runner.py
+  expected_symbols:
+    - handle_failure
+    - try_number
+    - UP_FOR_RETRY
+  notes: "State transition spans TI model, scheduler, and task SDK execution loop."
+
+- id: mh_sensor_reschedule_flow
+  question: "How does sensor reschedule mode work end-to-end? Trace from the sensor returning 'reschedule' to the task being picked up again later."
+  category: multi_hop
+  expected_paths:
+    - task-sdk/src/airflow/sdk/bases/sensor.py
+    - airflow-core/src/airflow/models/taskreschedule.py
+    - airflow-core/src/airflow/ti_deps
+  expected_symbols:
+    - BaseSensorOperator
+    - TaskReschedule
+    - ReadyToRescheduleDep
+  notes: "Sensor base + TaskReschedule model + the dep that re-enables it."
+
+- id: mh_connection_to_hook
+  question: "When an operator calls a Hook, how does the Hook actually load the Connection credentials at runtime? Walk through every step."
+  category: multi_hop
+  expected_paths:
+    - airflow-core/src/airflow/models/connection.py
+    - airflow-core/src/airflow/hooks/base.py
+    - task-sdk/src/airflow/sdk
+  expected_symbols:
+    - get_connection
+    - BaseHook
+    - Connection
+  notes: "BaseHook.get_connection + Connection model + SDK plumbing."
+
+- id: mh_dag_serialization_loading
+  question: "How are DAGs serialized to the database, and then how does the scheduler deserialize them to make scheduling decisions?"
+  category: multi_hop
+  expected_paths:
+    - airflow-core/src/airflow/serialization
+    - airflow-core/src/airflow/models/serialized_dag.py
+    - airflow-core/src/airflow/jobs
+  expected_symbols:
+    - SerializedDagModel
+    - SerializedDAG
+    - serialize_dag
+  notes: "Serialization layer + DB model + scheduler consumption."
+
+- id: mh_executor_to_worker
+  question: "When the scheduler queues a task, what is the path through the CeleryExecutor to the worker actually running it?"
+  category: multi_hop
+  expected_paths:
+    - airflow-core/src/airflow/executors
+    - providers/celery/src/airflow/providers/celery/executors/celery_executor.py
+  expected_symbols:
+    - CeleryExecutor
+    - queue_command
+    - execute_async
+  notes: "Base executor + Celery-specific implementation."
+
+- id: mh_trigger_async_flow
+  question: "How do deferrable operators yield to triggers and resume? Trace from the operator's defer() call to the trigger firing and the task resuming."
+  category: multi_hop
+  expected_paths:
+    - task-sdk/src/airflow/sdk
+    - airflow-core/src/airflow/triggers
+    - airflow-core/src/airflow/jobs/triggerer_job_runner.py
+  expected_symbols:
+    - BaseTrigger
+    - defer
+    - TriggererJobRunner
+  notes: "Defer path + trigger base + triggerer process — async coordination across 3 components."
+
+- id: mh_macro_template_resolution
+  question: "When a task has a Jinja template like {{ ds }} in a parameter, how does it get resolved at runtime? What classes and what order?"
+  category: multi_hop
+  expected_paths:
+    - task-sdk/src/airflow/sdk
+    - airflow-core/src/airflow/templates.py
+    - airflow-core/src/airflow/models/taskinstance.py
+  expected_symbols:
+    - render_templates
+    - Context
+    - jinja_env
+  notes: "Template engine + context construction + TI rendering."
+
+- id: mh_smartsensor_to_executor
+  question: "How does the scheduler decide a task is ready to run, queue it, and send it to the executor? Walk through the exact sequence."
+  category: multi_hop
+  expected_paths:
+    - airflow-core/src/airflow/jobs/scheduler_job_runner.py
+    - airflow-core/src/airflow/executors
+    - airflow-core/src/airflow/models/taskinstance.py
+  expected_symbols:
+    - _enqueue_task_instances_with_queued_state
+    - find_executable_task_instances
+    - queue_command
+  notes: "Scheduler scheduling loop + queue handoff + executor receipt."
+
+- id: mh_dataset_to_dagrun
+  question: "When a dataset is updated by one DAG, how does that propagate to triggering a downstream DAG that listens for it?"
+  category: multi_hop
+  expected_paths:
+    - airflow-core/src/airflow/models/dataset.py
+    - airflow-core/src/airflow/jobs
+    - airflow-core/src/airflow/timetables
+  expected_symbols:
+    - DatasetEvent
+    - DatasetTriggeredTimetable
+    - create_dagrun
+  notes: "Dataset event recording + scheduler dataset polling + downstream DAG creation."
+
+- id: mh_secret_backend_chain
+  question: "When code calls Variable.get('my_var'), what is the actual lookup chain? Which backends are checked, in what order, and what happens on miss?"
+  category: multi_hop
+  expected_paths:
+    - airflow-core/src/airflow/models/variable.py
+    - airflow-core/src/airflow/secrets
+    - airflow-core/src/airflow/configuration.py
+  expected_symbols:
+    - get_variable
+    - BaseSecretsBackend
+    - configured_secrets_backends
+  notes: "Variable get + secrets backend protocol + config-driven backend ordering."
+
+- id: mh_logging_pipeline
+  question: "When a task runs and prints to its logger, how does the log line get from the worker process to the Airflow UI?"
+  category: multi_hop
+  expected_paths:
+    - airflow-core/src/airflow/utils/log
+    - task-sdk/src/airflow/sdk
+    - airflow-core/src/airflow/api_fastapi
+  expected_symbols:
+    - FileTaskHandler
+    - log_id
+    - read
+  notes: "Worker-side log writer + storage convention + UI-side reader."
+
+- id: mh_backfill_creation
+  question: "When you trigger a backfill, what creates the DAG runs, how are they distinguished from regular runs, and how does the scheduler pick them up?"
+  category: multi_hop
+  expected_paths:
+    - airflow-core/src/airflow/models/backfill.py
+    - airflow-core/src/airflow/models/dagrun.py
+    - airflow-core/src/airflow/jobs
+  expected_symbols:
+    - Backfill
+    - DagRunType
+    - BACKFILL_JOB
+  notes: "Backfill model + DagRun.run_type discrimination + scheduler awareness."
+
+- id: mh_task_to_db_write
+  question: "Trace what happens in the database when a task finishes successfully. Which rows get updated, in what order, and from which process?"
+  category: multi_hop
+  expected_paths:
+    - task-sdk/src/airflow/sdk/execution_time
+    - airflow-core/src/airflow/models/taskinstance.py
+    - airflow-core/src/airflow/api_fastapi/execution_api
+  expected_symbols:
+    - TaskInstanceState
+    - update
+    - SUCCESS
+  notes: "Task SDK emits state change → execution API persists → TI table updated."
+
+- id: mh_perms_check_path
+  question: "When a user in the UI clicks 'trigger DAG', what permission checks happen between the click and the DAG run actually being created?"
+  category: multi_hop
+  expected_paths:
+    - airflow-core/src/airflow/api_fastapi
+    - airflow-core/src/airflow/auth
+    - airflow-core/src/airflow/models/dag.py
+  expected_symbols:
+    - can_edit
+    - check_authorized
+    - create_dagrun
+  notes: "UI button → API route → auth check → model creation. Auth is the multi-hop pivot."

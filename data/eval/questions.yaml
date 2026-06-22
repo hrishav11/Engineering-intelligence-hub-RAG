@@ -1,0 +1,219 @@
+# Eval set for the Engineering Intelligence Hub (Apache Airflow corpus).
+#
+# Each entry:
+#   id           — short stable identifier
+#   question     — the user-facing query
+#   category     — factual | where_is | conceptual | multi_hop
+#   expected_paths
+#                — list of file-path substrings. A retrieval HIT is when ANY
+#                  returned chunk's `source_path` contains ANY of these.
+#   expected_symbols (optional)
+#                — list of substrings; stricter — must match `symbol` metadata.
+#   notes        — free-text rationale for why this question is interesting
+#
+# Goals when adding questions: spread across categories, vary difficulty,
+# include both "easy doc lookup" and "hard implementation hunt" cases.
+
+- id: gcs_upload_large_files
+  question: "How does GCSHook.upload handle chunked uploads for large files?"
+  category: where_is
+  expected_paths:
+    - providers/google/src/airflow/providers/google/cloud/hooks/gcs.py
+  expected_symbols:
+    - GCSHook.upload
+  notes: |
+    Week 1+2 both struggled here — siblings and tests outranked the real method.
+    Symbol injection in Week 2.5 fixed it. Canonical regression test.
+
+- id: xcom_serialize_value
+  question: "How does BaseXCom.serialize_value work?"
+  category: where_is
+  expected_paths:
+    - task-sdk/src/airflow/sdk/bases/xcom.py
+  expected_symbols:
+    - BaseXCom.serialize_value
+  notes: |
+    Week 1 failed (only docstrings, no method body). Week 2 succeeded.
+
+- id: scheduler_decide_dags
+  question: "How does the scheduler decide which DAGs to run next?"
+  category: where_is
+  expected_paths:
+    - airflow-core/src/airflow/jobs/scheduler_job_runner.py
+    - airflow-core/src/airflow/models/dagrun.py
+  expected_symbols:
+    - _do_scheduling
+    - _schedule_all_dag_runs
+    - get_queued_dag_runs_to_set_running
+  notes: |
+    Multi-step process; multiple methods need to surface.
+
+- id: max_active_tis_per_dag_meaning
+  question: "What does max_active_tis_per_dag actually do?"
+  category: factual
+  expected_paths:
+    - airflow-core/src/airflow/models/taskinstance.py
+    - airflow-core/src/airflow/models/dag.py
+    - task-sdk/src/airflow/sdk/definitions
+  expected_symbols:
+    - max_active_tis_per_dag
+  notes: |
+    Week 1 got it via accidental test-file match. Symbol injection should pin
+    the real definition site now.
+
+- id: localexecutor_vs_celeryexecutor
+  question: "What is the difference between LocalExecutor and CeleryExecutor?"
+  category: conceptual
+  expected_paths:
+    - executors/local_executor
+    - providers/celery/src/airflow/providers/celery/executors/celery_executor.py
+    - executor.rst
+  notes: |
+    Pure conceptual — should pull docs + class headers from both executor files.
+
+- id: taskflow_api_purpose
+  question: "What is the TaskFlow API and when should I use it?"
+  category: conceptual
+  expected_paths:
+    - airflow-core/docs/tutorial/taskflow.rst
+    - airflow-core/docs/core-concepts/taskflow.rst
+    - task-sdk/src/airflow/sdk/definitions/decorators
+  notes: |
+    Docs-heavy question. Vector should do most of the work.
+
+- id: pool_slot_allocation
+  question: "How does Airflow allocate Pool slots when many tasks compete for them?"
+  category: where_is
+  expected_paths:
+    - airflow-core/src/airflow/models/pool.py
+    - airflow-core/src/airflow/jobs/scheduler_job_runner.py
+  expected_symbols:
+    - Pool
+    - open_slots
+  notes: |
+    Combines docs (concept) + code (allocation logic in scheduler).
+
+- id: connection_encryption
+  question: "How are Connection passwords encrypted at rest?"
+  category: where_is
+  expected_paths:
+    - airflow-core/src/airflow/models/connection.py
+    - airflow-core/src/airflow/utils/log/secrets_masker.py
+    - airflow-core/src/airflow/models/crypto.py
+  notes: |
+    "Fernet" is the keyword; tests if BM25 picks it up vs vector semantic similarity.
+
+- id: dagrun_state_transitions
+  question: "What are all the possible DagRun states and how are transitions managed?"
+  category: factual
+  expected_paths:
+    - airflow-core/src/airflow/models/dagrun.py
+    - airflow-core/src/airflow/utils/state.py
+    - task-sdk/src/airflow/sdk
+  expected_symbols:
+    - DagRunState
+    - State
+  notes: |
+    Tests whether enum/state-class chunks surface.
+
+- id: scheduler_failure_recovery
+  question: "How does Airflow recover when the scheduler itself crashes?"
+  category: conceptual
+  expected_paths:
+    - airflow-core/src/airflow/jobs
+    - airflow-core/docs/administration-and-deployment
+  notes: |
+    HA scheduler topic — should surface both docs and scheduler job code.
+
+- id: xcom_backend_selection
+  question: "How does Airflow decide which XCom backend to use?"
+  category: where_is
+  expected_paths:
+    - task-sdk/src/airflow/sdk/bases/xcom.py
+    - airflow-core/src/airflow/models/xcom.py
+    - airflow-core/src/airflow/configuration.py
+  expected_symbols:
+    - resolve_xcom_backend
+    - xcom_backend
+  notes: |
+    Config-driven selection. Should find resolve_xcom_backend or similar.
+
+- id: dag_serialization
+  question: "How are DAGs serialized for storage in the database?"
+  category: where_is
+  expected_paths:
+    - airflow-core/src/airflow/serialization
+    - airflow-core/src/airflow/models/serialized_dag.py
+  expected_symbols:
+    - SerializedDagModel
+    - SerializedDAG
+    - serialize_dag
+  notes: |
+    Spans multiple files; tests cross-module retrieval.
+
+- id: task_retry_logic
+  question: "How does Airflow handle task retries and exponential backoff?"
+  category: factual
+  expected_paths:
+    - task-sdk/src/airflow/sdk
+    - airflow-core/src/airflow/models/taskinstance.py
+  expected_symbols:
+    - retries
+    - retry_delay
+    - retry_exponential_backoff
+  notes: |
+    Multiple knobs; both docs and TaskInstance logic should appear.
+
+- id: trigger_rule_evaluation
+  question: "How is the trigger_rule evaluated to decide whether a downstream task should run?"
+  category: where_is
+  expected_paths:
+    - task-sdk/src/airflow/sdk
+    - airflow-core/src/airflow/ti_deps
+  expected_symbols:
+    - TriggerRule
+    - trigger_rule
+  notes: |
+    Multi-hop: TriggerRule enum + the dep that evaluates it.
+
+- id: callback_order_on_failure
+  question: "When a task fails, which callbacks fire and in what order?"
+  category: multi_hop
+  expected_paths:
+    - task-sdk/src/airflow/sdk
+    - airflow-core/src/airflow/models/taskinstance.py
+  expected_symbols:
+    - on_failure_callback
+    - handle_failure
+  notes: |
+    Hardest case — answer spans multiple files. LLM judge will be telling here.
+
+- id: pool_and_max_active_tis_interaction
+  question: "How does parallel task scheduling respect both pool slots and max_active_tis_per_dag at the same time?"
+  category: multi_hop
+  expected_paths:
+    - airflow-core/src/airflow/jobs/scheduler_job_runner.py
+    - airflow-core/src/airflow/ti_deps
+    - airflow-core/src/airflow/models/pool.py
+  expected_symbols:
+    - find_executable_task_instances
+    - PoolSlotsAvailable
+    - MaxActiveTisPerDag
+  notes: |
+    Two independent constraints that combine in the scheduler. Tests whether
+    agentic retrieval can chain "scheduling → pool dep → per-dag dep".
+
+- id: dag_file_change_to_scheduler
+  question: "When a DAG file changes on disk, what is the full path from detection to the scheduler picking up the new version?"
+  category: multi_hop
+  expected_paths:
+    - airflow-core/src/airflow/dag_processing
+    - airflow-core/src/airflow/jobs
+    - airflow-core/src/airflow/models/dag.py
+  expected_symbols:
+    - DagFileProcessorManager
+    - _run_parsing_loop
+    - DagBag
+  notes: |
+    End-to-end flow across multiple subsystems. Single-shot retrieval can't
+    surface the whole chain in one go.
