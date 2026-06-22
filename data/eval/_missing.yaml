@@ -1,0 +1,462 @@
+- id: localexecutor_vs_celeryexecutor
+  question: What is the difference between LocalExecutor and CeleryExecutor?
+  category: conceptual
+  expected_paths:
+  - executors/local_executor
+  - providers/celery/src/airflow/providers/celery/executors/celery_executor.py
+  - executor.rst
+  notes: "Pure conceptual \u2014 should pull docs + class headers from both executor files.\n"
+- id: callback_order_on_failure
+  question: When a task fails, which callbacks fire and in what order?
+  category: multi_hop
+  expected_paths:
+  - task-sdk/src/airflow/sdk
+  - airflow-core/src/airflow/models/taskinstance.py
+  expected_symbols:
+  - on_failure_callback
+  - handle_failure
+  notes: "Hardest case \u2014 answer spans multiple files. LLM judge will be telling here.\n"
+- id: mh_callback_order
+  question: When a task fails in Airflow, which callbacks fire and in what order? Walk through the code path from the failure
+    to the callback execution.
+  category: multi_hop
+  expected_paths:
+  - task-sdk/src/airflow/sdk
+  - airflow-core/src/airflow/models/taskinstance.py
+  expected_symbols:
+  - on_failure_callback
+  - handle_failure
+  notes: TaskInstance failure path + callback dispatch in task-sdk. Both files needed.
+- id: mh_xcom_push_pull
+  question: 'Trace the full lifecycle of an XCom: from when a task pushes a value to when a downstream task pulls it. What
+    classes and methods are involved at each step?'
+  category: multi_hop
+  expected_paths:
+  - task-sdk/src/airflow/sdk/bases/xcom.py
+  - airflow-core/src/airflow/models/xcom.py
+  - task-sdk/src/airflow/sdk/execution_time
+  expected_symbols:
+  - BaseXCom
+  - serialize_value
+  - xcom_push
+  notes: Push path + storage + pull path = 3 distinct subsystems.
+- id: mh_retry_to_running
+  question: When a task fails and is configured for retries, what code path takes it from FAILED back to RUNNING for the next
+    attempt?
+  category: multi_hop
+  expected_paths:
+  - task-sdk/src/airflow/sdk
+  - airflow-core/src/airflow/models/taskinstance.py
+  - airflow-core/src/airflow/jobs/scheduler_job_runner.py
+  expected_symbols:
+  - handle_failure
+  - try_number
+  - UP_FOR_RETRY
+  notes: State transition spans TI model, scheduler, and task SDK execution loop.
+- id: gen_0004
+  question: How do I retrieve a slice of XCom sequence values for a specific task, and what parameters do I need to provide?
+  category: where_is
+  expected_paths:
+  - task-sdk/src/airflow/sdk/execution_time/request_handlers.py
+  expected_symbols:
+  - handle_get_xcom_sequence_slice
+  source_chunk_id: task-sdk/src/airflow/sdk/execution_time/request_handlers.py:247-263:function:handle_get_xcom_sequence_slice
+  notes: 'auto-generated from chunk: task-sdk/src/airflow/sdk/execution_time/request_handlers.py:247-263:function:handle_get_xcom_sequence_slice'
+- id: gen_0006
+  question: When does Airflow raise XComForMappingNotPushed, and what conditions trigger it?
+  category: factual
+  expected_paths:
+  - task-sdk/src/airflow/sdk/execution_time/task_runner.py
+  expected_symbols:
+  - _push_xcom_if_needed
+  source_chunk_id: task-sdk/src/airflow/sdk/execution_time/task_runner.py:2020-2062:function:_push_xcom_if_needed
+  notes: 'auto-generated from chunk: task-sdk/src/airflow/sdk/execution_time/task_runner.py:2020-2062:function:_push_xcom_if_needed'
+- id: gen_0007
+  question: How do I reschedule a task instance through the SDK client, and what payload needs to be sent to the API?
+  category: where_is
+  expected_paths:
+  - task-sdk/src/airflow/sdk/api/client.py
+  expected_symbols:
+  - TaskInstanceOperations.reschedule
+  source_chunk_id: task-sdk/src/airflow/sdk/api/client.py:316-321:method:TaskInstanceOperations.reschedule
+  notes: 'auto-generated from chunk: task-sdk/src/airflow/sdk/api/client.py:316-321:method:TaskInstanceOperations.reschedule'
+- id: gen_0015
+  question: How does the FTPSensor handle transient FTP errors when checking if a file exists, and what determines whether
+    it should fail or retry?
+  category: where_is
+  expected_paths:
+  - providers/ftp/src/airflow/providers/ftp/sensors/ftp.py
+  expected_symbols:
+  - FTPSensor.poke
+  source_chunk_id: providers/ftp/src/airflow/providers/ftp/sensors/ftp.py:73-90:method:FTPSensor.poke
+  notes: 'auto-generated from chunk: providers/ftp/src/airflow/providers/ftp/sensors/ftp.py:73-90:method:FTPSensor.poke'
+- id: gen_0019
+  question: How do I configure the BedrockCustomizeModelCompletedSensor to check for job completion with custom retry and
+    polling settings?
+  category: factual
+  expected_paths:
+  - providers/amazon/src/airflow/providers/amazon/aws/sensors/bedrock.py
+  expected_symbols:
+  - BedrockCustomizeModelCompletedSensor.__init__
+  source_chunk_id: providers/amazon/src/airflow/providers/amazon/aws/sensors/bedrock.py:127-138:method:BedrockCustomizeModelCompletedSensor.__init__
+  notes: 'auto-generated from chunk: providers/amazon/src/airflow/providers/amazon/aws/sensors/bedrock.py:127-138:method:BedrockCustomizeModelCompletedSensor.__init__'
+- id: gen_0026
+  question: How do BaseAwsLink subclasses retrieve configuration data from XCom to build their console links?
+  category: where_is
+  expected_paths:
+  - providers/amazon/src/airflow/providers/amazon/aws/links/base_aws.py
+  expected_symbols:
+  - BaseAwsLink.get_link
+  source_chunk_id: providers/amazon/src/airflow/providers/amazon/aws/links/base_aws.py:64-79:method:BaseAwsLink.get_link
+  notes: 'auto-generated from chunk: providers/amazon/src/airflow/providers/amazon/aws/links/base_aws.py:64-79:method:BaseAwsLink.get_link'
+- id: gen_0041
+  question: What parameters do I need to pass when creating a CloudSQLCloneInstanceOperator, and what are their defaults?
+  category: factual
+  expected_paths:
+  - providers/google/src/airflow/providers/google/cloud/operators/cloud_sql.py
+  expected_symbols:
+  - CloudSQLCloneInstanceOperator.__init__
+  source_chunk_id: providers/google/src/airflow/providers/google/cloud/operators/cloud_sql.py:574-595:method:CloudSQLCloneInstanceOperator.__init__
+  notes: 'auto-generated from chunk: providers/google/src/airflow/providers/google/cloud/operators/cloud_sql.py:574-595:method:CloudSQLCloneInstanceOperator.__init__'
+- id: gen_0047
+  question: How do I retrieve a translation dataset from Google Cloud AutoML using the Airflow TranslateHook?
+  category: where_is
+  expected_paths:
+  - providers/google/src/airflow/providers/google/cloud/hooks/translate.py
+  expected_symbols:
+  - TranslateHook.get_dataset
+  source_chunk_id: providers/google/src/airflow/providers/google/cloud/hooks/translate.py:432-463:method:TranslateHook.get_dataset
+  notes: 'auto-generated from chunk: providers/google/src/airflow/providers/google/cloud/hooks/translate.py:432-463:method:TranslateHook.get_dataset'
+- id: gen_0057
+  question: How does KubernetesJobOperator load and deserialize a Kubernetes Job definition from a YAML file?
+  category: where_is
+  expected_paths:
+  - providers/cncf/kubernetes/src/airflow/providers/cncf/kubernetes/operators/job.py
+  expected_symbols:
+  - KubernetesJobOperator.deserialize_job_template_file
+  source_chunk_id: providers/cncf/kubernetes/src/airflow/providers/cncf/kubernetes/operators/job.py:362-382:method:KubernetesJobOperator.deserialize_job_template_file
+  notes: 'auto-generated from chunk: providers/cncf/kubernetes/src/airflow/providers/cncf/kubernetes/operators/job.py:362-382:method:KubernetesJobOperator.deserialize_job_template_file'
+- id: gen_0060
+  question: When using the Kubernetes trigger, when should we wait for a pod to continue executing instead of completing the
+    task?
+  category: factual
+  expected_paths:
+  - providers/cncf/kubernetes/src/airflow/providers/cncf/kubernetes/triggers/pod.py
+  expected_symbols:
+  - KubernetesPodTrigger.should_wait
+  source_chunk_id: providers/cncf/kubernetes/src/airflow/providers/cncf/kubernetes/triggers/pod.py:604-610:method:KubernetesPodTrigger.should_wait
+  notes: 'auto-generated from chunk: providers/cncf/kubernetes/src/airflow/providers/cncf/kubernetes/triggers/pod.py:604-610:method:KubernetesPodTrigger.should_wait'
+- id: gen_0086
+  question: How does the Keycloak auth manager CLI retrieve the internal UUID of a configured client?
+  category: where_is
+  expected_paths:
+  - providers/keycloak/src/airflow/providers/keycloak/auth_manager/cli/commands.py
+  expected_symbols:
+  - _get_client_uuid
+  source_chunk_id: providers/keycloak/src/airflow/providers/keycloak/auth_manager/cli/commands.py:187-196:function:_get_client_uuid
+  notes: 'auto-generated from chunk: providers/keycloak/src/airflow/providers/keycloak/auth_manager/cli/commands.py:187-196:function:_get_client_uuid'
+- id: gen_0089
+  question: How do I start a Beam pipeline asynchronously using the BeamAsyncHook, and what parameters do I need to pass?
+  category: where_is
+  expected_paths:
+  - providers/apache/beam/src/airflow/providers/apache/beam/hooks/beam.py
+  expected_symbols:
+  - BeamAsyncHook.start_pipeline_async
+  source_chunk_id: providers/apache/beam/src/airflow/providers/apache/beam/hooks/beam.py:597-612:method:BeamAsyncHook.start_pipeline_async
+  notes: 'auto-generated from chunk: providers/apache/beam/src/airflow/providers/apache/beam/hooks/beam.py:597-612:method:BeamAsyncHook.start_pipeline_async'
+- id: gen_0110
+  question: What server types can I use to run the Airflow API server, and what do I need to install if I want to use Gunicorn?
+  category: factual
+  expected_paths:
+  - airflow-core/src/airflow/cli/commands/api_server_command.py
+  expected_symbols:
+  - _run_api_server
+  source_chunk_id: airflow-core/src/airflow/cli/commands/api_server_command.py:144-192:function:_run_api_server
+  notes: 'auto-generated from chunk: airflow-core/src/airflow/cli/commands/api_server_command.py:144-192:function:_run_api_server'
+- id: gen_0118
+  question: What checks are performed on the airflow-core distribution, and why isn't the allowed shared imports check enabled
+    yet?
+  category: factual
+  expected_paths:
+  - scripts/ci/prek/check_shared_distributions_structure.py
+  expected_symbols:
+  - check_airflow_core_distribution
+  source_chunk_id: scripts/ci/prek/check_shared_distributions_structure.py:509-526:function:check_airflow_core_distribution
+  notes: 'auto-generated from chunk: scripts/ci/prek/check_shared_distributions_structure.py:509-526:function:check_airflow_core_distribution'
+- id: gen_0120
+  question: How does the provider YAML validation check for duplicate transfer definitions across source and target integration
+    pairs?
+  category: where_is
+  expected_paths:
+  - scripts/in_container/run_provider_yaml_files_check.py
+  expected_symbols:
+  - check_duplicates_in_list_of_transfers
+  source_chunk_id: scripts/in_container/run_provider_yaml_files_check.py:801-822:function:check_duplicates_in_list_of_transfers
+  notes: 'auto-generated from chunk: scripts/in_container/run_provider_yaml_files_check.py:801-822:function:check_duplicates_in_list_of_transfers'
+- id: gen_0129
+  question: How does the JavaCoordinator build the command to execute a task, and what information does it return?
+  category: where_is
+  expected_paths:
+  - task-sdk/src/airflow/sdk/coordinators/java/coordinator.py
+  expected_symbols:
+  - JavaCoordinator._build_execute_task_command
+  source_chunk_id: task-sdk/src/airflow/sdk/coordinators/java/coordinator.py:222-231:method:JavaCoordinator._build_execute_task_command
+  notes: 'auto-generated from chunk: task-sdk/src/airflow/sdk/coordinators/java/coordinator.py:222-231:method:JavaCoordinator._build_execute_task_command'
+- id: gen_0134
+  question: How do I use the @task_group decorator to wrap a function into a TaskGroup, and what arguments can I pass to customize
+    it?
+  category: factual
+  expected_paths:
+  - task-sdk/src/airflow/sdk/definitions/decorators/task_group.py
+  expected_symbols:
+  - task_group
+  source_chunk_id: task-sdk/src/airflow/sdk/definitions/decorators/task_group.py:214-227:function:task_group
+  notes: 'auto-generated from chunk: task-sdk/src/airflow/sdk/definitions/decorators/task_group.py:214-227:function:task_group'
+- id: gen_0153
+  question: What parameters does the GCSObjectUpdateSensor accept, and what's the default value for the deferrable parameter?
+  category: factual
+  expected_paths:
+  - providers/google/src/airflow/providers/google/cloud/sensors/gcs.py
+  expected_symbols:
+  - GCSObjectUpdateSensor.__init__
+  source_chunk_id: providers/google/src/airflow/providers/google/cloud/sensors/gcs.py:183-199:method:GCSObjectUpdateSensor.__init__
+  notes: 'auto-generated from chunk: providers/google/src/airflow/providers/google/cloud/sensors/gcs.py:183-199:method:GCSObjectUpdateSensor.__init__'
+- id: gen_0165
+  question: What parameters do I need to pass to the GenAIGeminiCancelBatchJobOperator to cancel a batch job in Google Gemini?
+  category: factual
+  expected_paths:
+  - providers/google/src/airflow/providers/google/cloud/operators/gen_ai.py
+  expected_symbols:
+  - GenAIGeminiCancelBatchJobOperator.__init__
+  source_chunk_id: providers/google/src/airflow/providers/google/cloud/operators/gen_ai.py:812-830:method:GenAIGeminiCancelBatchJobOperator.__init__
+  notes: 'auto-generated from chunk: providers/google/src/airflow/providers/google/cloud/operators/gen_ai.py:812-830:method:GenAIGeminiCancelBatchJobOperator.__init__'
+- id: gen_0172
+  question: How do I get a Text Embedding model from Vertex AI in my Airflow tasks?
+  category: where_is
+  expected_paths:
+  - providers/google/src/airflow/providers/google/cloud/hooks/vertex_ai/generative_model.py
+  expected_symbols:
+  - GenerativeModelHook.get_text_embedding_model
+  source_chunk_id: providers/google/src/airflow/providers/google/cloud/hooks/vertex_ai/generative_model.py:37-40:method:GenerativeModelHook.get_text_embedding_model
+  notes: 'auto-generated from chunk: providers/google/src/airflow/providers/google/cloud/hooks/vertex_ai/generative_model.py:37-40:method:GenerativeModelHook.get_text_embedding_model'
+- id: gen_0181
+  question: What parameters can I pass to SFTPToWasbOperator when transferring files from SFTP to Azure Blob Storage, and
+    what are their defaults?
+  category: factual
+  expected_paths:
+  - providers/microsoft/azure/src/airflow/providers/microsoft/azure/transfers/sftp_to_wasb.py
+  expected_symbols:
+  - SFTPToWasbOperator.__init__
+  source_chunk_id: providers/microsoft/azure/src/airflow/providers/microsoft/azure/transfers/sftp_to_wasb.py:74-98:method:SFTPToWasbOperator.__init__
+  notes: 'auto-generated from chunk: providers/microsoft/azure/src/airflow/providers/microsoft/azure/transfers/sftp_to_wasb.py:74-98:method:SFTPToWasbOperator.__init__'
+- id: gen_0194
+  question: How does the JDBC hook construct a SQLAlchemy connection URI from the Airflow connection configuration?
+  category: where_is
+  expected_paths:
+  - providers/jdbc/src/airflow/providers/jdbc/hooks/jdbc.py
+  expected_symbols:
+  - JdbcHook.get_uri
+  source_chunk_id: providers/jdbc/src/airflow/providers/jdbc/hooks/jdbc.py:231-264:method:JdbcHook.get_uri
+  notes: 'auto-generated from chunk: providers/jdbc/src/airflow/providers/jdbc/hooks/jdbc.py:231-264:method:JdbcHook.get_uri'
+- id: gen_0196
+  question: When I run SQLColumnCheckOperator, what happens if one of my column checks fails? Does it raise an exception immediately
+    or does it save the results first?
+  category: factual
+  expected_paths:
+  - providers/common/sql/src/airflow/providers/common/sql/operators/sql.py
+  expected_symbols:
+  - SQLColumnCheckOperator.execute
+  source_chunk_id: providers/common/sql/src/airflow/providers/common/sql/operators/sql.py:686-719:method:SQLColumnCheckOperator.execute
+  notes: 'auto-generated from chunk: providers/common/sql/src/airflow/providers/common/sql/operators/sql.py:686-719:method:SQLColumnCheckOperator.execute'
+- id: gen_0204
+  question: How do I initialize a ConnectionExtraConfig object for the Slack provider, and what parameters does it expect?
+  category: factual
+  expected_paths:
+  - providers/slack/src/airflow/providers/slack/utils/__init__.py
+  expected_symbols:
+  - ConnectionExtraConfig.__init__
+  source_chunk_id: providers/slack/src/airflow/providers/slack/utils/__init__.py:38-42:method:ConnectionExtraConfig.__init__
+  notes: 'auto-generated from chunk: providers/slack/src/airflow/providers/slack/utils/__init__.py:38-42:method:ConnectionExtraConfig.__init__'
+- id: gen_0209
+  question: How does the OpenAI hook test the connection to verify it's working properly?
+  category: factual
+  expected_paths:
+  - providers/openai/src/airflow/providers/openai/hooks/openai.py
+  expected_symbols:
+  - OpenAIHook.test_connection
+  source_chunk_id: providers/openai/src/airflow/providers/openai/hooks/openai.py:98-103:method:OpenAIHook.test_connection
+  notes: 'auto-generated from chunk: providers/openai/src/airflow/providers/openai/hooks/openai.py:98-103:method:OpenAIHook.test_connection'
+- id: gen_0227
+  question: What parameters does the backfill command accept and how are they passed to the actual backfill operation?
+  category: factual
+  expected_paths:
+  - airflow-core/src/airflow/cli/commands/backfill_command.py
+  expected_symbols:
+  - create_backfill
+  source_chunk_id: airflow-core/src/airflow/cli/commands/backfill_command.py:40-118:function:create_backfill
+  notes: 'auto-generated from chunk: airflow-core/src/airflow/cli/commands/backfill_command.py:40-118:function:create_backfill'
+- id: gen_0229
+  question: How does Airflow populate the list of finished tasks for a DAG run, and what happens if a task instance doesn't
+    have its task object attached?
+  category: where_is
+  expected_paths:
+  - airflow-core/src/airflow/ti_deps/dep_context.py
+  expected_symbols:
+  - DepContext.ensure_finished_tis
+  source_chunk_id: airflow-core/src/airflow/ti_deps/dep_context.py:88-105:method:DepContext.ensure_finished_tis
+  notes: 'auto-generated from chunk: airflow-core/src/airflow/ti_deps/dep_context.py:88-105:method:DepContext.ensure_finished_tis'
+- id: gen_0234
+  question: How does Airflow prevent concurrent operations on a DAG bundle, and what happens if a bundle is already locked
+    when I try to use it?
+  category: where_is
+  expected_paths:
+  - airflow-core/src/airflow/dag_processing/bundles/base.py
+  expected_symbols:
+  - BaseDagBundle.lock
+  source_chunk_id: airflow-core/src/airflow/dag_processing/bundles/base.py:418-441:method:BaseDagBundle.lock
+  notes: 'auto-generated from chunk: airflow-core/src/airflow/dag_processing/bundles/base.py:418-441:method:BaseDagBundle.lock'
+- id: gen_0238
+  question: How does the pre-commit check identify whether a class has a synchronous method with a specific name?
+  category: where_is
+  expected_paths:
+  - scripts/ci/prek/check_trigger_serialize_init.py
+  expected_symbols:
+  - _get_method
+  source_chunk_id: scripts/ci/prek/check_trigger_serialize_init.py:93-97:function:_get_method
+  notes: 'auto-generated from chunk: scripts/ci/prek/check_trigger_serialize_init.py:93-97:function:_get_method'
+- id: gen_0244
+  question: When DBDagBag caches a SerializedDAG, how does it handle the case where the DAG is updated in-place with the same
+    dag_version_id but different content?
+  category: where_is
+  expected_paths:
+  - _gh/airflow/pr/65834
+  expected_symbols:
+  - Fix DBDagBag returning stale SerializedDAG after in-place version update
+  source_chunk_id: _gh/airflow/pr/65834:1-25:pr:Fix DBDagBag returning stale SerializedDAG after in-place version update
+  notes: 'auto-generated from chunk: _gh/airflow/pr/65834:1-25:pr:Fix DBDagBag returning stale SerializedDAG after in-place
+    version update'
+- id: gen_0246
+  question: When OTel metrics are enabled, why does the DagProcessor crash if a DAG filename contains spaces or characters
+    that are invalid for OpenTelemetry instrument names?
+  category: where_is
+  expected_paths:
+  - _gh/airflow/issues/68282
+  expected_symbols:
+  - SafeOtelLogger.gauge() missing name_is_otel_safe() guard causes DagProcessor cra
+  source_chunk_id: _gh/airflow/issues/68282:1-124:issue:SafeOtelLogger.gauge() missing name_is_otel_safe() guard causes DagProcessor
+    cra
+  notes: 'auto-generated from chunk: _gh/airflow/issues/68282:1-124:issue:SafeOtelLogger.gauge() missing name_is_otel_safe()
+    guard causes DagProcessor cra'
+- id: gen_0249
+  question: When a task emits outlet events, how should the partition key from those events relate to the DagRun's partition
+    key, and what was wrong with the previous behavior?
+  category: conceptual
+  expected_paths:
+  - _gh/airflow/pr/67430
+  expected_symbols:
+  - Fix/partition key semantics across DagRun 67368
+  source_chunk_id: _gh/airflow/pr/67430:1-33:pr:Fix/partition key semantics across DagRun 67368
+  notes: 'auto-generated from chunk: _gh/airflow/pr/67430:1-33:pr:Fix/partition key semantics across DagRun 67368'
+- id: gen_0263
+  question: How do I configure the polling behavior when waiting for a Neptune cluster to stop, and what are the default values?
+  category: factual
+  expected_paths:
+  - providers/amazon/src/airflow/providers/amazon/aws/triggers/neptune.py
+  expected_symbols:
+  - NeptuneClusterStoppedTrigger.__init__
+  source_chunk_id: providers/amazon/src/airflow/providers/amazon/aws/triggers/neptune.py:84-107:method:NeptuneClusterStoppedTrigger.__init__
+  notes: 'auto-generated from chunk: providers/amazon/src/airflow/providers/amazon/aws/triggers/neptune.py:84-107:method:NeptuneClusterStoppedTrigger.__init__'
+- id: gen_0264
+  question: What parameters do I need to pass to ExasolToS3Operator to export data from Exasol to S3, and what are their defaults?
+  category: factual
+  expected_paths:
+  - providers/amazon/src/airflow/providers/amazon/aws/transfers/exasol_to_s3.py
+  expected_symbols:
+  - ExasolToS3Operator.__init__
+  source_chunk_id: providers/amazon/src/airflow/providers/amazon/aws/transfers/exasol_to_s3.py:60-87:method:ExasolToS3Operator.__init__
+  notes: 'auto-generated from chunk: providers/amazon/src/airflow/providers/amazon/aws/transfers/exasol_to_s3.py:60-87:method:ExasolToS3Operator.__init__'
+- id: gen_0267
+  question: How do I find all DataSync tasks that use a specific pair of source and destination locations?
+  category: where_is
+  expected_paths:
+  - providers/amazon/src/airflow/providers/amazon/aws/hooks/datasync.py
+  expected_symbols:
+  - DataSyncHook.get_task_arns_for_location_arns
+  source_chunk_id: providers/amazon/src/airflow/providers/amazon/aws/hooks/datasync.py:190-216:method:DataSyncHook.get_task_arns_for_location_arns
+  notes: 'auto-generated from chunk: providers/amazon/src/airflow/providers/amazon/aws/hooks/datasync.py:190-216:method:DataSyncHook.get_task_arns_for_location_arns'
+- id: gen_0271
+  question: How do I fetch details about a specific dbt Cloud project using the DbtCloudHook?
+  category: factual
+  expected_paths:
+  - providers/dbt/cloud/src/airflow/providers/dbt/cloud/hooks/dbt.py
+  expected_symbols:
+  - DbtCloudHook.get_project
+  source_chunk_id: providers/dbt/cloud/src/airflow/providers/dbt/cloud/hooks/dbt.py:491-500:method:DbtCloudHook.get_project
+  notes: 'auto-generated from chunk: providers/dbt/cloud/src/airflow/providers/dbt/cloud/hooks/dbt.py:491-500:method:DbtCloudHook.get_project'
+- id: gen_0277
+  question: What's the default connection ID I should use if I don't specify a dataprep_conn_id when creating a DataprepGetJobsForJobGroupOperator?
+  category: factual
+  expected_paths:
+  - providers/google/src/airflow/providers/google/cloud/operators/dataprep.py
+  expected_symbols:
+  - DataprepGetJobsForJobGroupOperator.__init__
+  source_chunk_id: providers/google/src/airflow/providers/google/cloud/operators/dataprep.py:49-58:method:DataprepGetJobsForJobGroupOperator.__init__
+  notes: 'auto-generated from chunk: providers/google/src/airflow/providers/google/cloud/operators/dataprep.py:49-58:method:DataprepGetJobsForJobGroupOperator.__init__'
+- id: gen_0280
+  question: When a BigQuery job completes in the BigQueryInsertJobOperator, how does the operator check if the job actually
+    succeeded and what errors does it report?
+  category: where_is
+  expected_paths:
+  - providers/google/src/airflow/providers/google/cloud/operators/bigquery.py
+  expected_symbols:
+  - BigQueryInsertJobOperator._handle_job_error
+  source_chunk_id: providers/google/src/airflow/providers/google/cloud/operators/bigquery.py:2379-2388:method:BigQueryInsertJobOperator._handle_job_error
+  notes: 'auto-generated from chunk: providers/google/src/airflow/providers/google/cloud/operators/bigquery.py:2379-2388:method:BigQueryInsertJobOperator._handle_job_error'
+- id: gen_0295
+  question: How do I create an EvalTask object when working with Vertex AI's generative models in Airflow?
+  category: where_is
+  expected_paths:
+  - providers/google/src/airflow/providers/google/cloud/hooks/vertex_ai/generative_model.py
+  expected_symbols:
+  - GenerativeModelHook.get_eval_task
+  source_chunk_id: providers/google/src/airflow/providers/google/cloud/hooks/vertex_ai/generative_model.py:60-72:method:GenerativeModelHook.get_eval_task
+  notes: 'auto-generated from chunk: providers/google/src/airflow/providers/google/cloud/hooks/vertex_ai/generative_model.py:60-72:method:GenerativeModelHook.get_eval_task'
+- id: gen_0302
+  question: How do I delete an Azure File Share using the Airflow Azure provider, and what does the method return if the share
+    doesn't exist?
+  category: factual
+  expected_paths:
+  - providers/microsoft/azure/src/airflow/providers/microsoft/azure/hooks/fileshare.py
+  expected_symbols:
+  - AzureFileShareHook.delete_share
+  source_chunk_id: providers/microsoft/azure/src/airflow/providers/microsoft/azure/hooks/fileshare.py:211-223:method:AzureFileShareHook.delete_share
+  notes: 'auto-generated from chunk: providers/microsoft/azure/src/airflow/providers/microsoft/azure/hooks/fileshare.py:211-223:method:AzureFileShareHook.delete_share'
+- id: gen_0310
+  question: How does the FAB auth manager register different authentication views based on the auth type (DB, LDAP, OAuth,
+    etc.)?
+  category: where_is
+  expected_paths:
+  - providers/fab/src/airflow/providers/fab/auth_manager/security_manager/override.py
+  expected_symbols:
+  - FabAirflowSecurityManagerOverride.register_views
+  source_chunk_id: providers/fab/src/airflow/providers/fab/auth_manager/security_manager/override.py:436-535:method:FabAirflowSecurityManagerOverride.register_views
+  notes: 'auto-generated from chunk: providers/fab/src/airflow/providers/fab/auth_manager/security_manager/override.py:436-535:method:FabAirflowSecurityManagerOverride.register_views'
+- id: gen_0320
+  question: What connection configuration fields are available when setting up a YDB connection in Airflow, and what do they
+    expect?
+  category: factual
+  expected_paths:
+  - providers/ydb/src/airflow/providers/ydb/hooks/ydb.py
+  expected_symbols:
+  - YDBHook.get_connection_form_widgets
+  source_chunk_id: providers/ydb/src/airflow/providers/ydb/hooks/ydb.py:178-214:method:YDBHook.get_connection_form_widgets
+  notes: 'auto-generated from chunk: providers/ydb/src/airflow/providers/ydb/hooks/ydb.py:178-214:method:YDBHook.get_connection_form_widgets'
+- id: gen_0342
+  question: How can I query multiple DAG runs across different DAGs with date range filters using the FastAPI endpoint?
+  category: where_is
+  expected_paths:
+  - airflow-core/src/airflow/api_fastapi/core_api/routes/public/dag_run.py
+  expected_symbols:
+  - get_list_dag_runs_batch
+  source_chunk_id: airflow-core/src/airflow/api_fastapi/core_api/routes/public/dag_run.py:759-867:function:get_list_dag_runs_batch
+  notes: 'auto-generated from chunk: airflow-core/src/airflow/api_fastapi/core_api/routes/public/dag_run.py:759-867:function:get_list_dag_runs_batch'

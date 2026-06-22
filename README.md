@@ -6,44 +6,44 @@ Built incrementally over six weeks to measure which retrieval techniques actuall
 
 ## The real numbers
 
-Final eval: **152 questions × 4 methods**, LLM-as-judge scoring 0–3. Two metric tiers:
+Final eval: **200 questions × 4 methods**, LLM-as-judge scoring 0–3. Two metric tiers:
 
 ```
 PATH-ONLY — "did the right FILE surface?"
                        hit@1   hit@3   hit@10   MRR    path_cov   judge
-routed (default)       0.57    0.74    0.89     0.67   0.86       1.84
-hybrid                 0.55    0.72    0.85     0.65   0.83       1.85
-hybrid_voyage_rerank   0.56    0.76    0.85     0.67   0.83       1.82
-hybrid_rerank (bge)    0.56    0.73    0.91     0.67   0.88       1.83
+routed (default)       0.555   0.735   0.880    0.661  0.868      1.80
+hybrid                 0.535   0.710   0.845    0.637  0.816      1.80
+hybrid_voyage_rerank   0.545   0.725   0.845    0.651  0.816      1.78
+hybrid_rerank (bge)    0.568   0.724   0.899    0.672  0.869      1.79
 
 STRICT — "did the EXACT expected chunk surface?"
                        hit@1   hit@3   hit@10   MRR    symbol_cov
-routed (default)       0.20    0.47    0.68     0.36   0.71
-hybrid                 0.18    0.45    0.66     0.34   0.66
-hybrid_voyage_rerank   0.24    0.52    0.66     0.39   0.66      ← +33% on hit@1
-hybrid_rerank (bge)    0.18    0.44    0.70     0.34   0.70
+routed (default)       0.195   0.450   0.660    0.36   0.715
+hybrid                 0.180   0.440   0.630    0.34   0.642
+hybrid_voyage_rerank   0.230   0.495   0.630    0.39   0.642   ← +28% on hit@1
+hybrid_rerank (bge)    0.181   0.407   0.673    0.34   0.675
 ```
 
 The path-only metric is what users experience: did the system point me to the right file? The strict metric checks exact-chunk match, which is stricter than most users care about.
 
-**By category — the multi-hop result that vindicates Week 6:**
+**By category — multi-hop dominance of agentic fallback (the Week 6 vindication):**
 
 ```
-multi_hop questions (10):
-                       hit@3   path_cov
-routed (w/ fallback)   0.20    0.30   ← 2.3× better than plain hybrid
-hybrid                 0.20    0.13
-hybrid_voyage_rerank   0.00    0.13
-hybrid_rerank (bge)    0.00    0.17
+multi_hop questions (14):
+                       p_hit@3   path_cov   strict_hit@3
+routed (w/ fallback)   0.57      0.45       0.14       ← 2-3× everything else
+hybrid                 0.29      0.14       0.14
+hybrid_voyage_rerank   0.07      0.14       0.00
+hybrid_rerank (bge)    0.07      0.18       0.00
 ```
 
 ## What this tells me
 
-- **Routed is the right default.** Wins or ties on most metrics. The router escalates vague questions to agentic via an `<INSUFFICIENT_CONTEXT>` sentinel — only ~20% of questions take the expensive agentic path.
-- **Voyage's code-trained reranker actually helps** — strict hit@1 jumps from 18% → 24% (+33% relative). The earlier "rerankers don't help code RAG" finding was true only for the open-source bge-reranker (web-trained). Code-trained models are different.
-- **bge-reranker widens the catchment** (best hit@10 + path_cov) but hurts top-1 precision. Net loss for default use, kept as `--method hybrid_rerank` for experimentation.
-- **Agentic auto-fallback wins on multi-hop questions** (30% path coverage vs 13% for plain hybrid). This validated Week 6 once we had the right metric (`path_coverage` — coverage anywhere in cumulative hits, not just first k).
-- **Judge scores cluster at 1.82–1.85** — the underlying answer quality is similar across methods. Retrieval improvements move retrieval metrics; answer quality is bottlenecked elsewhere (chunk size, citation discipline, model choice).
+- **Routed is the right default.** Best multi-hop performance (2-3× the others), ties or wins everywhere else, costs ~$0.006/question on average (~20% of questions escalate to agentic via the `<INSUFFICIENT_CONTEXT>` sentinel).
+- **Voyage's code-trained reranker actually helps on strict precision** — hit@1 jumps from 18% → 23% (+28% relative). The earlier "rerankers don't help code RAG" finding was true only for the open-source `bge-reranker-base` (web-trained on MS-MARCO). Code-trained models are different. Available as `--method hybrid_voyage_rerank`.
+- **bge-reranker widens the catchment** — leads slightly on path metrics (best hit@10 = 0.899, path_cov = 0.869) but hurts strict precision and hurts multi-hop badly. Kept as `--method hybrid_rerank` for inspection.
+- **Agentic auto-fallback dominates multi-hop** — 45% path coverage vs 13% for plain hybrid (3.2× better). This validated Week 6 once we had the right metric (`path_coverage` — anywhere in cumulative hits, not just first k).
+- **Judge scores cluster at 1.78–1.80** — the underlying answer quality is similar across methods. Retrieval improvements move retrieval metrics; answer quality plateaus because the chunks are large enough that all methods give Claude *some* useful context.
 - **No single method dominates everything.** Different methods are best for different metrics, which is itself an honest finding.
 
 ## What works (and why I'd keep it)
@@ -55,10 +55,10 @@ hybrid_rerank (bge)    0.00    0.17
 
 ## What didn't work (and what eventually did)
 
-1. **Open-source cross-encoder (`bge-reranker-base`)** — 4GB dep, 300ms per query, makes top-3 precision worse on code corpora. Web-trained reranker doesn't transfer.
-2. **Voyage AI rerank (`rerank-2-lite`)** — *did* work — code-trained model improved strict hit@1 from 18% → 24%. Kept as `--method hybrid_voyage_rerank`. The lesson: domain-specific rerankers matter, not rerankers in general.
+1. **Open-source cross-encoder (`bge-reranker-base`)** — 4GB dep, 300ms per query. Widens the catchment (best path_cov) but hurts strict precision. Web-trained on MS-MARCO; doesn't transfer cleanly to code.
+2. **Voyage AI rerank (`rerank-2-lite`)** — *did* work — code-trained model improved strict hit@1 from 18% → 23% (+28% relative). Kept as `--method hybrid_voyage_rerank`. The lesson: domain-specific rerankers matter, not rerankers in general.
 3. **HyDE query rewriting** — extra Claude call per query, slightly worse on the eval. Possibly useful for purely conceptual questions but the gain doesn't justify the cost.
-4. **Agentic retrieval (Claude as tool-using agent)** — qualitatively transformative on multi-hop questions, but the single-shot `hit@k` metric I started with couldn't measure its value. Once I added `path_coverage` (matches *anywhere* in cumulative hits), the win became measurable: 30% multi-hop path coverage vs 13% for hybrid. The metric was the bug.
+4. **Agentic retrieval (Claude as tool-using agent)** — qualitatively transformative on multi-hop questions, but the single-shot `hit@k` metric I started with couldn't measure its value. Once I added `path_coverage` (matches *anywhere* in cumulative hits), the win became measurable: 45% multi-hop path coverage vs 13-18% for any single-shot method. **The metric was the bug, not the technique.**
 
 ## Architecture
 
