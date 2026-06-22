@@ -9,6 +9,8 @@ load_dotenv()
 class Config:
     anthropic_api_key: str = os.environ.get("ANTHROPIC_API_KEY", "")
     openai_api_key: str = os.environ.get("OPENAI_API_KEY", "")
+    voyage_api_key: str = os.environ.get("VOYAGE_API_KEY", "")
+    voyage_rerank_model: str = os.environ.get("VOYAGE_RERANK_MODEL", "rerank-2-lite")
     anthropic_model: str = os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
     openai_embed_model: str = os.environ.get("OPENAI_EMBED_MODEL", "text-embedding-3-small")
     chroma_dir: str = os.environ.get("CHROMA_DIR", "./data/chroma")

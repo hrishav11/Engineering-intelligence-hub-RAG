@@ -140,10 +140,11 @@ def _vector_query(text: str, k: int, embed_text: str | None = None) -> list[tupl
     return list(zip(res["ids"][0], res["metadatas"][0], res["documents"][0], res["distances"][0]))
 
 
-def query(text: str, k: int = 6, method: str = "hybrid", rerank: bool = False, hyde: bool = False) -> list[dict]:
+def query(text: str, k: int = 6, method: str = "hybrid", rerank: bool = False,
+          hyde: bool = False, voyage: bool = False) -> list[dict]:
     """method: 'vector' | 'bm25' | 'hybrid' | 'hybrid_rerank' | 'hybrid_hyde' |
-    'hybrid_rerank_hyde' | 'routed' (router picks hybrid vs hybrid_hyde per question).
-    rerank / hyde flags are additive — method='hybrid_rerank_hyde' sets both."""
+    'hybrid_rerank_hyde' | 'hybrid_voyage_rerank' | 'routed'.
+    rerank / hyde / voyage flags are additive."""
     if method == "hybrid_rerank":
         rerank = True
         method = "hybrid"
@@ -153,6 +154,9 @@ def query(text: str, k: int = 6, method: str = "hybrid", rerank: bool = False, h
     elif method == "hybrid_rerank_hyde":
         rerank = True
         hyde = True
+        method = "hybrid"
+    elif method == "hybrid_voyage_rerank":
+        voyage = True
         method = "hybrid"
 
     embed_text: str | None = None
@@ -256,6 +260,12 @@ def query(text: str, k: int = 6, method: str = "hybrid", rerank: bool = False, h
         # example/test code over canonical definitions for code-heavy queries.
         from . import rerank as rerank_mod
         out = rerank_mod.rerank(text, out, top_k=k, pin_count=len(pinned))
+
+    if voyage:
+        # Voyage AI rerank — code-trained, hopefully avoids bge's tendency to
+        # prefer tests/examples over canonical implementations.
+        from . import voyage_rerank as voyage_mod
+        out = voyage_mod.rerank(text, out, top_k=k, pin_count=len(pinned))
 
     return out[:k]
 
