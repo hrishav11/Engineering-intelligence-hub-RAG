@@ -4,6 +4,18 @@ A code-RAG system over the Apache Airflow codebase (~65,000 chunks: code, docs, 
 
 Built incrementally over six weeks to measure which retrieval techniques actually move the needle. **Several techniques I added didn't help.** This README documents what worked, what didn't, and what the real numbers look like — including the ones I'd rather not show.
 
+## The UI
+
+![Empty state with example questions and sidebar controls](docs/screenshots/01_hero_dark.png)
+
+Ask any question about Airflow. The system shows which retrieval method the router picked (blue badge), runs retrieval, and synthesizes an answer with [#N] citations linking to real files and GitHub issues:
+
+![Specific question routed to hybrid retrieval, answered with file citations](docs/screenshots/02_answer_hybrid_dark.png)
+
+When the model judges its retrieved chunks insufficient to answer (e.g. vague class-name questions where the class header doesn't contain the actual logic), it emits an `<INSUFFICIENT_CONTEXT>` sentinel and the system transparently re-runs as a multi-step agentic search:
+
+![Vague question auto-escalated to agentic retrieval via the INSUFFICIENT_CONTEXT sentinel](docs/screenshots/03_answer_agentic_fallback_dark.png)
+
 ## The real numbers
 
 Final eval: **200 questions × 4 methods**, LLM-as-judge scoring 0–3. Two metric tiers:
